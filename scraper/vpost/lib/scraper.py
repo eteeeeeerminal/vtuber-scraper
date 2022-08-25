@@ -1,4 +1,3 @@
-from dataclasses import replace
 import os
 import pathlib
 import json
@@ -12,7 +11,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 
-from .vtuber_data import VTuberData, load_vtuber_datum, save_vtuber_datum
+from .vtuber_data import VTuberData, load_detail_datum, load_vtuber_datum, save_vtuber_datum, VTuberDetails, VideoData, save_detail_datum
 
 VTUBER_DATABASE_URL = "https://vtuber-post.com/database/index.php"
 
@@ -48,6 +47,27 @@ def element_to_vtuber_data(web_element: WebElement) -> VTuberData:
         group_name=group_name,
     )
 
+def element_to_videodata(web_element: WebElement) -> VideoData:
+    title_elm = web_element.find_element(by=By.CLASS_NAME, value="title")
+    title_elm = title_elm.find_element(by=By.TAG_NAME, value="a")
+    video_id = title_elm.get_attribute("videoid")
+    title = title_elm.text
+    timestamp = web_element.find_element(by=By.CLASS_NAME, value="time").text
+    view_n = web_element.find_element(by=By.CLASS_NAME, value="play").text
+    good = web_element.find_element(by=By.CLASS_NAME, value="eval").text
+
+    # timestamp をよしなに変換する処理を from_json にしか作ってないのでとりあえず
+    return VideoData.from_json({
+        "video_id": video_id,
+        "title": title,
+        "timestamp": timestamp,
+        "view_n": int(view_n.replace("回", "").replace(",", "")),
+        "good": int(good.replace(",", "")),
+    })
+
+STATE_DATA_FILE_NAME = "state.json"
+VTUBER_DATA_FILE_NAME = "vtuber_data.json"
+DETAIL_DATA_FILE_NAME = "detail_data.json"
 
 class VTuberListScraper:
 
@@ -57,8 +77,8 @@ class VTuberListScraper:
 
     def __init__(self, save_dir: str) -> None:
         self.save_dir = pathlib.Path(save_dir)
-        self.state_json_path = self.save_dir.joinpath("state.json")
-        self.vtuber_data_json_path = self.save_dir.joinpath("vtuber_data.json")
+        self.state_json_path = self.save_dir.joinpath(STATE_DATA_FILE_NAME)
+        self.vtuber_data_json_path = self.save_dir.joinpath(VTUBER_DATA_FILE_NAME)
 
         self.web_driver = get_web_driver()
         self.vtuber_datum: list[VTuberData] = []
@@ -169,5 +189,71 @@ class VTuberListScraper:
         self.web_driver.quit()
 
 class VTuberDetailScraper:
-    def __init__(self) -> None:
-        pass
+
+    SAVE_PERIOD = 10
+
+    def __init__(self, save_dir: str) -> None:
+        self.save_dir = pathlib.Path(save_dir)
+        self.detail_data_json_path = self.save_dir.joinpath(DETAIL_DATA_FILE_NAME)
+        self.vtuber_data_json_path = self.save_dir.joinpath(VTUBER_DATA_FILE_NAME)
+
+        self.web_driver = get_web_driver()
+        if os.path.exists(self.detail_data_json_path):
+            detail_list = load_detail_datum(self.detail_data_json_path)
+            self.detail_dict: dict = {d.youtube_id :d for d in detail_list}
+        else:
+            self.detail_dict: dict = {}
+        self.vtuber_datum = load_vtuber_datum(self.vtuber_data_json_path)
+
+    def __scrape_page(self, youtube_id: str) -> VTuberDetails:
+        self.web_driver.get(VTuber_detail_url(youtube_id))
+
+        description = self.web_driver.find_element(by=By.CLASS_NAME, value="desc").text
+
+        twitter_id = None
+        link_elms = self.web_driver.find_elements(by=By.CLASS_NAME, value="group")
+        for link_elm in link_elms:
+            if "Twitter" in link_elm.text and "@" in link_elm.text:
+                twitter_id = link_elm.find_element(by=By.TAG_NAME, value="a").text
+
+        # video data
+        movie_list_elms = self.web_driver.find_elements(by=By.CLASS_NAME, value="movie_list")
+        video_elms = [elms.find_elements(by=By.CLASS_NAME, value="clearfix") for elms in movie_list_elms]
+        video_list = [list(map(lambda elm: element_to_videodata(elm), elm_list)) for elm_list in video_elms]
+        video_list = sum(video_list, [])
+
+        time.sleep(3)
+        return VTuberDetails(
+            youtube_id=youtube_id,
+            description=description,
+            twitter_id=twitter_id,
+            recent_videos=video_list
+        )
+
+    def scrape_youtube_datum(self) -> None:
+        for i, value in enumerate(self.vtuber_datum):
+            if i and i % self.SAVE_PERIOD == 0:
+                self.save()
+
+            # 動画の数が少ないのはデビュー直後 or 引退済み
+            if not value.upload_videos or value.upload_videos < 5:
+                continue
+
+            # 取得済みはスキップ
+            if value.youtube_id in self.detail_dict.keys():
+                continue
+
+            youtube_id = value.youtube_id
+            if youtube_id:
+                yt_data = self.__scrape_page(youtube_id)
+                self.detail_dict[youtube_id] = yt_data
+
+        self.save()
+
+    def save(self) -> None:
+        os.makedirs(self.save_dir, exist_ok=True)
+        detail_datum = self.detail_dict.values()
+        save_detail_datum(detail_datum, self.detail_data_json_path)
+
+    def __del__(self):
+        self.web_driver.quit()
