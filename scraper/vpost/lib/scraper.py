@@ -56,14 +56,21 @@ def element_to_videodata(web_element: WebElement) -> VideoData:
     view_n = web_element.find_element(by=By.CLASS_NAME, value="play").text
     good = web_element.find_element(by=By.CLASS_NAME, value="eval").text
 
-    # timestamp をよしなに変換する処理を from_json にしか作ってないのでとりあえず
-    return VideoData.from_json({
-        "video_id": video_id,
-        "title": title,
-        "timestamp": timestamp,
-        "view_n": int(view_n.replace("回", "").replace(",", "")),
-        "good": int(good.replace(",", "")),
-    })
+    try:
+        # timestamp をよしなに変換する処理を from_json にしか作ってないのでとりあえず
+        return VideoData.from_json({
+            "video_id": video_id,
+            "title": title,
+            "timestamp": timestamp,
+            "view_n": int(view_n.replace("回", "").replace(",", "")),
+            "good": int(good.replace(",", "")),
+        })
+    except:
+        # timestamp が壊れてるデータがあるとエラーになる
+        # 面倒くさいので、フォーマットが乱れてるデータは無視
+        return None
+
+
 
 STATE_DATA_FILE_NAME = "state.json"
 VTUBER_DATA_FILE_NAME = "vtuber_data.json"
@@ -221,6 +228,7 @@ class VTuberDetailScraper:
         video_elms = [elms.find_elements(by=By.CLASS_NAME, value="clearfix") for elms in movie_list_elms]
         video_list = [list(map(lambda elm: element_to_videodata(elm), elm_list)) for elm_list in video_elms]
         video_list = sum(video_list, [])
+        video_list = list(filter(lambda x: x is not None, video_list))
 
         time.sleep(3)
         return VTuberDetails(
@@ -232,9 +240,7 @@ class VTuberDetailScraper:
 
     def scrape_youtube_datum(self) -> None:
         for i, value in enumerate(self.vtuber_datum):
-            if i and i % self.SAVE_PERIOD == 0:
-                self.save()
-
+            print(value.name)
             # 動画の数が少ないのはデビュー直後 or 引退済み
             if not value.upload_videos or value.upload_videos < 5:
                 continue
@@ -243,10 +249,16 @@ class VTuberDetailScraper:
             if value.youtube_id in self.detail_dict.keys():
                 continue
 
+            if i and i % self.SAVE_PERIOD == 0:
+                self.save()
+
             youtube_id = value.youtube_id
             if youtube_id:
-                yt_data = self.__scrape_page(youtube_id)
-                self.detail_dict[youtube_id] = yt_data
+                try:
+                    yt_data = self.__scrape_page(youtube_id)
+                    self.detail_dict[youtube_id] = yt_data
+                except:
+                    print(f"errror at {value.name}")
 
         self.save()
 
