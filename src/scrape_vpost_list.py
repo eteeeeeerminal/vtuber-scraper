@@ -1,4 +1,4 @@
-from lib.scraper import VTuberListScraper
+from vpost.scraper import VTuberListScraper
 
 scraper = VTuberListScraper("vpost_data")
 scraper.ready_scraper()

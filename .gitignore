@@ -1,2 +1,7 @@
+.env
+
 *hoge*
 __pycache__
+
+# ダウンロードしたデータ
+vpost_data
