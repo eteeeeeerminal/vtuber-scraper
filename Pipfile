@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 selenium = "*"
 webdriver-manager = "*"
+google-api-python-client = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
