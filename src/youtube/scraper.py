@@ -20,11 +20,13 @@ def response_to_item(response: dict) -> SearchResultItem:
         description = response["snippet"]["description"]
     )
 
+SEARCH_RESULT_JSON_NAME = "search_result.json"
+
 class YouTubeSearchScraper:
     """youtube の検索結果を保存"""
     def __init__(self, save_dir: str, api_key: str, ng_words: list[str]) -> None:
         self.save_dir = pathlib.Path(save_dir)
-        self.save_path = self.save_dir.joinpath("search_result.json")
+        self.save_path = self.save_dir.joinpath(SEARCH_RESULT_JSON_NAME)
 
         self.youtube = discovery.build('youtube', 'v3', developerKey=api_key)
 
@@ -32,9 +34,7 @@ class YouTubeSearchScraper:
 
         self.search_results: list[SearchResult] = []
         if os.path.exists(self.save_path):
-            with open(self.save_path, "r", encoding="utf-8") as f:
-                result_json = json.load(f)
-                self.search_results = load_search_datum(result_json)
+            self.search_results = load_search_datum(self.save_path)
 
 
     def search(self, query, order="rating", max_page=20) -> None:
@@ -61,7 +61,7 @@ class YouTubeSearchScraper:
         i = 0
         while request and i < max_page:
             response = request.execute()
-            search_result.items.append([response_to_item(r) for r in response["items"]])
+            search_result.items.extend([response_to_item(r) for r in response["items"]])
             request = self.youtube.search().list_next(request, response)
             i += 1
 

@@ -2,8 +2,6 @@ import json
 import datetime
 from dataclasses import dataclass, asdict
 
-from vpost.vtuber_data import VideoData
-
 def str_to_datetime(timestamp: str) -> datetime.datetime:
     timestamp = timestamp.replace("Z", "+00:00")
     return datetime.datetime.fromisoformat(timestamp)
@@ -24,8 +22,8 @@ class SearchResultItem:
 
     @classmethod
     def from_json(cls, json_dict: dict):
-        json_dict["timestamp"] = str_to_datetime(json_dict["timestamp"])
-        return VideoData(**json_dict)
+        json_dict["publish_time"] = str_to_datetime(json_dict["publish_time"])
+        return cls(**json_dict)
 
 @dataclass
 class SearchResult:
@@ -51,7 +49,7 @@ def load_search_datum(json_path) -> list[SearchResult]:
         return [SearchResult.from_json(vdd) for vdd in search_results_dict]
 
 def date_handler(obj):
-    return obj.isoformat()+'Z' if hasattr(obj, 'isoformat') else obj
+    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
 
 def save_search_datum(datum: list[SearchResult], json_path) -> None:
     save_obj = [asdict(d) for d in datum]
