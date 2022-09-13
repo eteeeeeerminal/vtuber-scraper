@@ -67,7 +67,7 @@ class YouTubeChannelData:
 
     upload_list_id: str
     view_count: int
-    subscriver_count: int | None # 非公開なら None
+    subscriber_count: int | None # 非公開なら None
     video_count: int
 
     @classmethod

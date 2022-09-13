@@ -80,7 +80,7 @@ def response_to_channel_data(response: dict) -> YouTubeChannelData:
         publish_time = response["snippet"]["publishedAt"],
         upload_list_id = response["contentDetails"]["relatedPlaylists"]["uploads"],
         view_count = response["statistics"]["viewCount"],
-        subscriver_count = response["statistics"].get("subscriberCount", None),
+        subscriber_count = response["statistics"].get("subscriberCount", None),
         video_count = response["statistics"]["videoCount"]
     )
 
