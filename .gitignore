@@ -3,9 +3,10 @@
 *hoge*
 __pycache__
 
-# ダウンロードしたデータ
+# ダウンロードしたデータなど
 vpost_data
 yt_data
+dataset
 
 # テスト用のあれこれ
 temp
