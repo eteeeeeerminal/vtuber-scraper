@@ -1,9 +1,11 @@
 import json
+import re
 import datetime
 from dataclasses import dataclass, asdict
 
 def str_to_datetime(timestamp: str) -> datetime.datetime:
     timestamp = timestamp.replace("Z", "+00:00")
+    timestamp = re.sub(r"\.[\d]+", "", timestamp)
     return datetime.datetime.fromisoformat(timestamp)
 
 
