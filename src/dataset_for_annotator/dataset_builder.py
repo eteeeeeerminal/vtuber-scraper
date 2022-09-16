@@ -6,6 +6,7 @@ import datetime
 
 from utils.file import PathLike
 from utils.logger import get_logger
+from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
 from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, save_vtuber_merged_datum
 from vpost.vtuber_data import VTuberData, VTuberDetails, VideoData, load_detail_datum, load_vtuber_datum
@@ -100,10 +101,31 @@ class DatasetBuilder:
         self.__save_merged_datum()
 
 
-    def load_ytdata(self, youtube_json_path: PathLike) -> None:
-        self.logger.info("")
-        # タイムスタンプを UTC → JST に変える
-        pass
+    def load_ytdata(self, youtube_json_path: PathLike, does_update: bool = False) -> None:
+        self.logger.info(f"START TO LOAD YOUTUBE DATA: does_update is {does_update}")
+
+        self.logger.info(f"load YouTubeChannelData from {youtube_json_path}")
+        channel_datum: list[YouTubeChannelData] = load_channel_datum(youtube_json_path)
+
+        for data in channel_datum:
+            if not does_update and data.channel_id in self.vtuber_merged_datum:
+                self.logger.debug(f"{data.channel_id} is already exist. skip.")
+                continue
+
+            self.vtuber_merged_datum[data.channel_id] = VTuberMergedData(
+                data.channel_id, datetime.datetime.now(JST),
+                YouTubeData(
+                    data.channel_id, data.title, data.description,
+                    data.publish_time.replace(tzinfo=JST),
+                    data.subscriber_count, data.view_count, data.video_count
+                ),
+                MissingValue.Unacquired,
+                MissingValue.Unacquired
+            )
+
+        self.logger.info(f"DONE! youtube data has loaded")
+        self.__save_merged_datum()
+
 
     def __filter_youtube_basic_info(self) -> None:
         pass

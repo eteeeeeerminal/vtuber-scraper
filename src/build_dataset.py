@@ -7,3 +7,4 @@ YOUTUBE_DATA_PATH = "yt_data/channels.json"
 
 builder = DatasetBuilder("dataset")
 builder.load_vpostdata(VPOST_DATA_PATH, VPOST_DETAIL_PATH)
+builder.load_ytdata(YOUTUBE_DATA_PATH)
