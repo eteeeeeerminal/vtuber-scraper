@@ -1,3 +1,6 @@
+"""YouTube の動画検索から VTuber のアカウント情報を集める
+"""
+
 import os
 
 from dotenv import load_dotenv

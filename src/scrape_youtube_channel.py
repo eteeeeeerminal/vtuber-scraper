@@ -1,3 +1,8 @@
+"""YouTube の channel id からチャンネルの詳細情報を取得
+
+`scrape_youtube_search.py` で取得した id から各チャンネルの情報を取得する.
+"""
+
 import os
 
 from dotenv import load_dotenv

@@ -1,3 +1,5 @@
+"""vpost と YouTube から取得したデータをまとめて, さらに足りないデータも集めて, データセットを作る.
+"""
 
 from dataset_for_annotator.dataset_builder import DatasetBuilder
 
