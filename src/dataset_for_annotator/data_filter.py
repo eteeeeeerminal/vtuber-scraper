@@ -2,6 +2,7 @@
 データセットに入れるデータを決める
 """
 
+import re
 from typing import Callable
 from collections.abc import Iterable
 
@@ -27,6 +28,9 @@ def tried_to_get_self_intro_video(target: VTuberMergedData) -> bool:
     return found_self_intro_video(target) or target.target_video == MissingValue.NotExist
 
 def got_upload_lists(target: VTuberMergedData) -> bool:
+    if target.youtube.video_count_n is None or target.youtube.upload_videos is None:
+        return False
+
     return target.youtube.video_count_n <= len(target.youtube.upload_videos)
 
 def too_few_uploads(target: VTuberMergedData) -> bool:
@@ -63,4 +67,37 @@ def adopt_filters(filter_conditions: tuple[FilterFunc], target: Iterable[VTuberM
 
 # その他のフィルター
 def is_self_intro_video(video: YouTubeVideoData) -> bool:
-    pass
+    # nice_to_meet_you = re.compile("はじめまして")
+    ## ノイズが多かったので一旦除外
+    self_intro = re.compile("自己紹介")
+    q_and_a_templete = re.compile("一問一答")
+    clip = re.compile("切り抜き")
+    live = re.compile("配信")
+    colab = re.compile("コラボ")
+    ng_patterns = (
+        "生放送アーカイブ",
+    )
+    ng_patterns = list(map(re.compile, ng_patterns))
+
+    if any(map(lambda x: x.search(video.title), ng_patterns)):
+        # 1つでも ng ワードがあれば除外
+        return False
+
+    if colab.search(video.title) or (video.description and colab.search(video.description)):
+        # コラボは除外
+        return False
+
+    if live.search(video.title) and not clip.search(video.title):
+        # 切り抜きじゃない配信アーカイブの場合, 長いので除外
+        return False
+
+    if q_and_a_templete.search(video.title):
+        # 一問一答自己紹介 は個性が分かりにくくなるので除外
+        return False
+
+    if self_intro.search(video.title):
+        # 自己紹介動画
+        return True
+
+    return False
+

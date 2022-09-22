@@ -6,8 +6,9 @@ from typing import Iterable
 
 from apiclient import discovery
 
-from .data_types import VTuberMergedData, YouTubeVideoData
-from utils.others import subdivide_list
+from dataset_for_annotator.data_filter import got_upload_lists, is_self_intro_video
+
+from .data_types import MissingValue, VTuberMergedData, YouTubeVideoData
 from youtube.youtube_data import str_to_datetime
 
 class TwitterCollector:
@@ -57,6 +58,21 @@ def response_to_video_data(response: dict) -> YouTubeVideoData:
 def response_to_video_list(response: list) -> list[YouTubeVideoData]:
     return list(map(response_to_video_data, response))
 
+def extract_self_intro_video(target: VTuberMergedData) -> MissingValue | YouTubeVideoData:
+    """target の投稿動画一覧から, 自己紹介動画を抽出"""
+    if target.youtube.upload_videos is None:
+        return MissingValue.Unacquired
+
+    self_intro_videos: filter[YouTubeVideoData] = filter(is_self_intro_video, target.youtube.upload_videos)
+    for video in self_intro_videos:
+        return video
+
+    if got_upload_lists(target):
+        return MissingValue.NotExist
+
+    else:
+        return MissingValue.NotFound
+
 class YouTubeCollector:
     def __init__(self, api_key: str, logger: logging.Logger) -> None:
         self.youtube = discovery.build('youtube', 'v3', developerKey=api_key)
@@ -89,6 +105,8 @@ class YouTubeCollector:
 
         return upload_list_dict
 
-    def set_self_intro_video(target: VTuberMergedData) -> None:
+    def set_self_intro_video(self, target: VTuberMergedData) -> None:
         """target の投稿動画一覧から, 自己紹介動画を抽出"""
-        pass
+        target.target_video = extract_self_intro_video(target)
+        if not isinstance(target.target_video, MissingValue):
+            self.logger.debug(f"found self-intro video {target.target_video.title}:{target.target_video.video_id}")

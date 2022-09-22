@@ -3,6 +3,7 @@ import logging
 import pathlib
 import os
 import datetime
+from typing import Iterable
 
 from utils.file import PathLike
 from utils.logger import get_logger
@@ -38,6 +39,8 @@ class DatasetBuilder:
 
         self.vtuber_merged_datum: dict[str, VTuberMergedData] = {}
         """key: vtuber_id, value: VTuberMergedData"""
+        self.filtered_datum: dict[str, VTuberMergedData] = self.vtuber_merged_datum
+        """self.vtuber_merged_datum の部分集合"""
 
         self.youtube_collector = YouTubeCollector(youtube_api_key, self.logger)
 
@@ -52,10 +55,12 @@ class DatasetBuilder:
         self.logger.info(f"DONE! merged data has loaded")
 
     def build(self) -> None:
+        self.filtered_datum = self.vtuber_merged_datum
         self.__filter_youtube_basic_info()
         self.__complement_youtube_basic_info()
         self.__filter_youtube_basic_info()
-        self.__collect_youtube_data()
+        # self.__got_upload_videos()
+        self.__got_self_intro_videos()
         self.__filter_youtube_content_info()
 
         self.__collect_twitter_data()
@@ -142,7 +147,6 @@ class DatasetBuilder:
         self.logger.info(f"DONE! youtube data has loaded")
         self.__save_merged_datum()
 
-
     def __filter_youtube_basic_info(self) -> None:
         pass
 
@@ -151,18 +155,15 @@ class DatasetBuilder:
         ## vpost と youtube search とで足りないもの違うと思うから分けてやる
         pass
 
-    def __collect_youtube_data(self) -> None:
-        self.logger.info("prepare to collect youtube video data")
-        # 動画リスト取得
+    def __got_upload_videos(self) -> None:
         target_videos = list(map(
             lambda x: x.youtube.channel_id,
             filter(
-                lambda x: (not tried_to_get_self_intro_video(x)) and got_upload_lists,
-                self.vtuber_merged_datum.values()
+                lambda x: not (tried_to_get_self_intro_video(x) or got_upload_lists(x)),
+                self.filtered_datum.values()
             )
         ))[:3]
         self.logger.info(f"will try to get {len(target_videos)} upload video lists")
-
 
         upload_video_lists = self.youtube_collector.get_upload_video_lists(target_videos)
         for key, upload_list in upload_video_lists.items():
@@ -170,8 +171,13 @@ class DatasetBuilder:
             self.vtuber_merged_datum[key].youtube.video_count_n = len(upload_list)
 
         self.logger.info(f"DONE! GOT {len(upload_video_lists)} upload video lists")
+        self.__save_merged_datum()
 
-        # 自己紹介動画抽出
+    def __got_self_intro_videos(self) -> None:
+        self.logger.info("extract self intro video")
+        for data in self.filtered_datum.values():
+            self.youtube_collector.set_self_intro_video(data)
+        self.logger.info("DONE!")
 
         self.__save_merged_datum()
 

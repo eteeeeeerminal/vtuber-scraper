@@ -23,6 +23,9 @@ class MissingValue(str, Enum):
     Failed = "failed"
     """取得失敗: 取得を試みたが, なんらかの理由でエラーになった場合"""
 
+    NotFound = "not_found"
+    """見つからない: 現状見つかっていないが, 存在しない確証もない場合"""
+
     NotExist = "not_exist"
     """存在しない: 取得を試みた結果, 存在しないことが分かった場合"""
 
