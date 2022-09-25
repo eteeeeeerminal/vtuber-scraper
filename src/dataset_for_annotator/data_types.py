@@ -81,6 +81,14 @@ class YouTubeVideoData:
             )
         return cls(**json_dict)
 
+def load_youtube_video_datum(json_path: PathLike) -> list[YouTubeVideoData]:
+    youtube_video_datum = load_json(json_path)
+    return list(map(YouTubeVideoData.from_json, youtube_video_datum))
+
+def save_youtube_video_datum(video_datum: list[YouTubeVideoData], json_path: PathLike) -> None:
+    save_obj = [asdict(v) for v in video_datum]
+    save_json(json_path, save_obj, date_handler)
+
 @dataclass
 class YouTubeData:
     channel_id: str
@@ -92,11 +100,10 @@ class YouTubeData:
     subscriber_count: int | None = None
     view_count: int | None = None
     video_count_n: int | None = None
+    got_video_n: int | None = None
 
     # brandSetting にあるじゃんと思ったけど, 取得出来る人とできない人がいるので却下
     ## country: str | None
-
-    upload_videos: list[YouTubeVideoData] | None = None
 
     @classmethod
     def from_json(cls, json_dict: dict):
@@ -104,11 +111,6 @@ class YouTubeData:
             json_dict["publish_time"] = datetime.datetime.fromisoformat(
                 json_dict["publish_time"]
             )
-
-        if json_dict["upload_videos"] is not None:
-            json_dict["upload_videos"] = list(map(
-                YouTubeVideoData.from_json, json_dict["upload_videos"]
-            ))
 
         return cls(**json_dict)
 
