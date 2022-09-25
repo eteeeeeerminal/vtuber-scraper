@@ -40,10 +40,19 @@ def got_upload_lists(target: VTuberMergedData) -> bool:
 ###    return target.youtube.channel_description
 
 def ng_words_filter(target: VTuberMergedData) -> bool:
+    description_ng_words = (
+        "コンドーム", # 公式アンバサダーがいたので
+    )
+    description_ng_words = list(map(re.compile, description_ng_words))
+
     title_ng_words = ("切り抜き",)
-    title_ng_patterns = list(map(re.compile, title_ng_words))
+    title_ng_patterns = list(map(re.compile, title_ng_words)) + description_ng_words
 
     if any(map(lambda x: x.search(target.youtube.name), title_ng_patterns)):
+        return False
+
+    description = target.youtube.channel_description
+    if description and any(map(lambda x: x.search(description), description_ng_words)):
         return False
 
     return True
