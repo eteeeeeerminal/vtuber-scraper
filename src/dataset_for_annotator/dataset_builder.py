@@ -1,14 +1,10 @@
-import io, sys
-from distutils.command.upload import upload
 import logging
 import pathlib
 import os
 import datetime
-from typing import Iterable
 
 from utils.file import PathLike
 from utils.logger import get_logger
-from utils.others import subdivide_list
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
 from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
