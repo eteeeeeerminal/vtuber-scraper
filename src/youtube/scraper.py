@@ -79,9 +79,9 @@ def response_to_channel_data(response: dict) -> YouTubeChannelData:
         description = response["snippet"]["description"],
         publish_time = response["snippet"]["publishedAt"],
         upload_list_id = response["contentDetails"]["relatedPlaylists"]["uploads"],
-        view_count = response["statistics"]["viewCount"],
-        subscriber_count = response["statistics"].get("subscriberCount", None),
-        video_count = response["statistics"]["videoCount"]
+        view_count = int(response["statistics"]["viewCount"]),
+        subscriber_count = int(response["statistics"].get("subscriberCount", None)),
+        video_count = int(response["statistics"]["videoCount"])
     )
 
 class YouTubeChannelScraper:
