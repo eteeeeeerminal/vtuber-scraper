@@ -19,8 +19,10 @@ twitter_filter_conds: tuple[FilterFunc] = (
 )
 
 # YouTube からのデータに関する条件
+
 ## 多分 Twitter 持ってる VTuber で自己紹介動画投稿してたら日本語話してるので省略
 ### def is_jp(target: VTuberMergedData) -> bool:
+
 def found_self_intro_video(target: VTuberMergedData) -> bool:
     return isinstance(target.target_video, YouTubeVideoData)
 
@@ -33,25 +35,47 @@ def got_upload_lists(target: VTuberMergedData) -> bool:
 
     return target.youtube.video_count_n <= len(target.youtube.upload_videos)
 
-def too_few_uploads(target: VTuberMergedData) -> bool:
-    pass
+## チャンネル説明欄に書いてなくても自己紹介動画の方に説明があるかも
+### def exist_channel_description(target: VTuberMergedData) -> bool:
+###    return target.youtube.channel_description
 
-def too_few_views(target: VTuberMergedData) -> bool:
-    pass
+def ng_words_filter(target: VTuberMergedData) -> bool:
+    title_ng_words = ("切り抜き",)
+    title_ng_patterns = list(map(re.compile, title_ng_words))
+
+    if any(map(lambda x: x.search(target.youtube.name), title_ng_patterns)):
+        return False
+
+    return True
+
+def enough_uploads(target: VTuberMergedData) -> bool:
+    return target.youtube.video_count_n is None \
+        or target.youtube.video_count_n > 3
+
+def enough_few_views(target: VTuberMergedData) -> bool:
+    return target.youtube.view_count is None \
+        or target.youtube.view_count > 10
+
+def enough_subscriber_count(target: VTuberMergedData) -> bool:
+    return target.youtube.subscriber_count is None \
+        or target.youtube.subscriber_count > 5
 
 youtube_basic_filter_conds: tuple[FilterFunc] = (
+    ng_words_filter,
+    enough_uploads,
+    enough_few_views, enough_subscriber_count,
 )
 """YouTube の動画情報を取得するかどうか判定
 データの補完前にも実行するので, 欠損値があった場合は弾かない
 """
 
-youtube_uploads_filter_conds: tuple[FilterFunc] = (
+youtube_content_filter_conds: tuple[FilterFunc] = (
     found_self_intro_video,
 )
 """YouTube の情報を一通り取得できた後のフィルター
 """
 
-youtube_filter_conds: tuple[FilterFunc] = youtube_basic_filter_conds + youtube_uploads_filter_conds
+youtube_filter_conds: tuple[FilterFunc] = youtube_basic_filter_conds + youtube_content_filter_conds
 
 
 all_filter_conditions: tuple[FilterFunc] = youtube_filter_conds + twitter_filter_conds

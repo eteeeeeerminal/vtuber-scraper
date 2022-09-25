@@ -7,11 +7,16 @@ from typing import Iterable
 
 from utils.file import PathLike
 from utils.logger import get_logger
+from utils.others import subdivide_list
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
 from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, save_vtuber_merged_datum, load_vtuber_merged_datum
 from .data_collector import TwitterCollector, YouTubeCollector
-from .data_filter import got_upload_lists, tried_to_get_self_intro_video
+from .data_filter import (
+    FilterFunc, youtube_basic_filter_conds, youtube_content_filter_conds,
+    got_upload_lists, tried_to_get_self_intro_video,
+    adopt_filters
+)
 from vpost.vtuber_data import VTuberData, VTuberDetails, VideoData, load_detail_datum, load_vtuber_datum
 
 # ちょっとどこに置くか考える必要あるかも
@@ -21,6 +26,10 @@ def videodata_to_youtube_videodata(video_data: VideoData) -> YouTubeVideoData:
         video_data.video_id, video_data.title,
         None, video_data.timestamp
     )
+
+def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: dict[str, VTuberMergedData]) -> dict[str, VTuberMergedData]:
+    filterd = adopt_filters(filter_conds, target.values())
+    return {f.vtuber_id: f for f in filterd}
 
 class DatasetBuilder:
     MERGED_JSON_NAME = "merged.json"
@@ -56,12 +65,18 @@ class DatasetBuilder:
 
     def build(self) -> None:
         self.filtered_datum = self.vtuber_merged_datum
-        self.__filter_youtube_basic_info()
-        self.__complement_youtube_basic_info()
-        self.__filter_youtube_basic_info()
-        # self.__got_upload_videos()
+        self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
+        # self.__complement_youtube_basic_info()
+        # self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
+        self.__got_upload_videos()
         self.__got_self_intro_videos()
-        self.__filter_youtube_content_info()
+        self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
+
+        for data in self.filtered_datum.values():
+            self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
+            self.logger.debug(f"----")
+
+        self.logger.debug(f"{len(self.filtered_datum)}")
 
         self.__collect_twitter_data()
 
