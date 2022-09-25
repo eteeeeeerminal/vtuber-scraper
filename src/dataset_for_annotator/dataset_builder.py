@@ -1,3 +1,4 @@
+import io, sys
 from distutils.command.upload import upload
 import logging
 import pathlib
@@ -10,7 +11,7 @@ from utils.logger import get_logger
 from utils.others import subdivide_list
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
-from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, save_vtuber_merged_datum, load_vtuber_merged_datum
+from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
 from .data_collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
     FilterFunc, youtube_basic_filter_conds, youtube_content_filter_conds,
@@ -34,15 +35,18 @@ def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: dict[str, VTuber
 class DatasetBuilder:
     MERGED_JSON_NAME = "merged.json"
     DATASET_JSON_NAME = "dataset.json"
+    UPLOADS_DIR = "uploads"
 
     def __init__(self,
         save_dir: PathLike, youtube_api_key: str,
-        logger: logging.Logger = get_logger(__name__, logging.INFO)
+        logger: logging.Logger = get_logger(__name__, logging.DEBUG)
     ) -> None:
         self.logger = logger
 
         save_dir = pathlib.Path(save_dir)
         os.makedirs(save_dir, exist_ok=True)
+        self.uploads_dir = save_dir.joinpath(self.UPLOADS_DIR)
+        os.makedirs(self.uploads_dir, exist_ok=True)
         self.merged_json_path = save_dir.joinpath(self.MERGED_JSON_NAME)
         self.dataset_json_path = save_dir.joinpath(self.DATASET_JSON_NAME)
 
@@ -51,7 +55,7 @@ class DatasetBuilder:
         self.filtered_datum: dict[str, VTuberMergedData] = self.vtuber_merged_datum
         """self.vtuber_merged_datum の部分集合"""
 
-        self.youtube_collector = YouTubeCollector(youtube_api_key, self.logger)
+        self.youtube_collector = YouTubeCollector(youtube_api_key, self.uploads_dir, self.logger)
 
     def load_merged_datum(self) -> None:
         if not os.path.exists(self.merged_json_path):
@@ -68,15 +72,15 @@ class DatasetBuilder:
         self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
         # self.__complement_youtube_basic_info()
         # self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
-        self.__got_upload_videos()
-        self.__got_self_intro_videos()
+        # self.__get_upload_videos()
+        self.__get_self_intro_videos()
         self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
 
-        for data in self.filtered_datum.values():
-            self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
-            self.logger.debug(f"----")
+        # for data in self.filtered_datum.values():
+        #     self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
+        #     self.logger.debug(f"----")
 
-        self.logger.debug(f"{len(self.filtered_datum)}")
+        # self.logger.debug(f"{len(self.filtered_datum)}")
 
         self.__collect_twitter_data()
 
@@ -124,6 +128,7 @@ class DatasetBuilder:
                 self.logger.info(f"VTuberData correspond to {detail.youtube_id} is not exist. skip.")
                 continue
 
+            raise Exception("upload_videos の読み込み方変えなさい")
             merged_data = self.vtuber_merged_datum[detail.youtube_id]
             merged_data.youtube.channel_description = detail.description
             if detail.recent_videos:
@@ -162,42 +167,45 @@ class DatasetBuilder:
         self.logger.info(f"DONE! youtube data has loaded")
         self.__save_merged_datum()
 
-    def __filter_youtube_basic_info(self) -> None:
-        pass
-
     def __complement_youtube_basic_info(self) -> None:
         # youtube の基本情報を揃える
-        ## vpost と youtube search とで足りないもの違うと思うから分けてやる
-        pass
+        ## 足りないもの
+        ### vpost: publish_time, youtube: 投稿動画数
+        ### publish_time はクリティカルじゃないし, 投稿動画数はどのみち取得する
+        # 今のところこの処理を特別する必要はない
+        raise Exception("not implement")
 
-    def __got_upload_videos(self) -> None:
-        target_videos = list(map(
+    def __get_upload_videos(self) -> None:
+        target_ids = list(map(
             lambda x: x.youtube.channel_id,
             filter(
                 lambda x: not (tried_to_get_self_intro_video(x) or got_upload_lists(x)),
                 self.filtered_datum.values()
             )
-        ))[:3]
-        self.logger.info(f"will try to get {len(target_videos)} upload video lists")
+        ))
+        self.logger.info(f"will try to get {len(target_ids)} upload video lists")
 
-        upload_video_lists = self.youtube_collector.get_upload_video_lists(target_videos)
-        for key, upload_list in upload_video_lists.items():
-            self.vtuber_merged_datum[key].youtube.upload_videos = upload_list
-            self.vtuber_merged_datum[key].youtube.video_count_n = len(upload_list)
 
-        self.logger.info(f"DONE! GOT {len(upload_video_lists)} upload video lists")
+        for i, vtuber_id in enumerate(target_ids):
+            got_video_n = self.youtube_collector.get_upload_video_list(vtuber_id)
+            self.vtuber_merged_datum[vtuber_id].youtube.got_video_n = got_video_n
+            self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
+
+            if (i+1) % 20 == 0:
+                self.__save_merged_datum()
+
+        self.logger.info(f"DONE!")
         self.__save_merged_datum()
 
-    def __got_self_intro_videos(self) -> None:
+    def __get_self_intro_videos(self) -> None:
         self.logger.info("extract self intro video")
-        for data in self.filtered_datum.values():
-            self.youtube_collector.set_self_intro_video(data)
+        list(map(
+            self.youtube_collector.set_self_intro_video,
+            self.filtered_datum.values()
+        ))
         self.logger.info("DONE!")
 
         self.__save_merged_datum()
-
-    def __filter_youtube_content_info(self) -> None:
-        pass
 
     def __collect_twitter_data(self) -> None:
         ### データを埋める処理は個別でやるんじゃなくて、一旦キューに入れてあとでまとめてやるほうがいい？

@@ -30,10 +30,10 @@ def tried_to_get_self_intro_video(target: VTuberMergedData) -> bool:
     return found_self_intro_video(target) or target.target_video == MissingValue.NotExist
 
 def got_upload_lists(target: VTuberMergedData) -> bool:
-    if target.youtube.video_count_n is None or target.youtube.upload_videos is None:
+    if target.youtube.video_count_n is None or target.youtube.got_video_n is None:
         return False
 
-    return target.youtube.video_count_n <= len(target.youtube.upload_videos)
+    return target.youtube.video_count_n <= target.youtube.got_video_n
 
 ## チャンネル説明欄に書いてなくても自己紹介動画の方に説明があるかも
 ### def exist_channel_description(target: VTuberMergedData) -> bool:

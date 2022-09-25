@@ -1,34 +1,40 @@
 """欠けているデータなんかを集めてくる部分
 """
 
+import os
+import re
 import logging
+import pathlib
 from typing import Iterable
 
 from apiclient import discovery
 
 from dataset_for_annotator.data_filter import got_upload_lists, is_self_intro_video
+from utils.file import PathLike
 
-from .data_types import MissingValue, VTuberMergedData, YouTubeVideoData
+from .data_types import MissingValue, TwitterData, VTuberMergedData, YouTubeVideoData, load_youtube_video_datum, save_youtube_video_datum
 from youtube.youtube_data import str_to_datetime
 
 class TwitterCollector:
     def __init__(self) -> None:
         pass
 
-    def find_twitter_id(target: VTuberMergedData) -> str:
+    def extract_twitter_account(target: VTuberMergedData) -> TwitterData | MissingValue:
+        twitter_url_pattern = re.compile(r"")
         # YouTube のリンク(バナー横やチャンネル概要欄のさらに下にあるもの)が取得できないので頑張る
 
         # YouTube の概要欄から Twitter アカウントを発見
         ## ママ上のアカウントを載せてる人もいるので注意, 複数Twitterアカウント載せてる人は飛ばすか, 最初の人を採用かも
         ## ママ上のアカウントのみある場合とかは知らない知らない
         ## 正規表現で id 抽出
+        pass
 
-        # Twitter 検索で見つける
+    def search_twitter_id(target: VTuberMergedData) -> str:
+        # Twitter の検索でアカウントを見つける
         ## YouTube のチャンネルから日本語を抜き出す
         ## その名前で"名前hoge"で検索
         ## 一番上に出てきたツイートの投稿者……かな多分
-        pass
-
+        raise Exception("not implement")
 
 def user_id_to_upload_list_id(user_id: str) -> str:
     # 勘で変換してるだけなので, 今後使えなくなるかも
@@ -58,12 +64,14 @@ def response_to_video_data(response: dict) -> YouTubeVideoData:
 def response_to_video_list(response: list) -> list[YouTubeVideoData]:
     return list(map(response_to_video_data, response))
 
-def extract_self_intro_video(target: VTuberMergedData) -> MissingValue | YouTubeVideoData:
+def extract_self_intro_video(target: VTuberMergedData, uploads_dir: pathlib.Path) -> MissingValue | YouTubeVideoData:
     """target の投稿動画一覧から, 自己紹介動画を抽出"""
-    if target.youtube.upload_videos is None:
+    uploads_path = uploads_dir.joinpath(f"{target.vtuber_id}.json")
+    if not os.path.isfile(uploads_path):
         return MissingValue.Unacquired
 
-    self_intro_videos: filter[YouTubeVideoData] = filter(is_self_intro_video, target.youtube.upload_videos)
+    uploads = load_youtube_video_datum(uploads_path)
+    self_intro_videos: filter[YouTubeVideoData] = filter(is_self_intro_video, uploads)
     for video in self_intro_videos:
         return video
 
@@ -74,39 +82,38 @@ def extract_self_intro_video(target: VTuberMergedData) -> MissingValue | YouTube
         return MissingValue.NotFound
 
 class YouTubeCollector:
-    def __init__(self, api_key: str, logger: logging.Logger) -> None:
+    def __init__(self, api_key: str, uploads_dir: PathLike, logger: logging.Logger) -> None:
         self.youtube = discovery.build('youtube', 'v3', developerKey=api_key)
 
         self.logger = logger
+        self.uploads_dir = pathlib.Path(uploads_dir)
 
-    def get_upload_video_lists(self, youtube_ids: Iterable[str]) -> dict[str, list[YouTubeVideoData]]:
+    def get_upload_video_list(self, youtube_id) -> int:
         """指定されたチャンネルの投稿動画リストを取得"""
-
-        upload_list_ids = map(user_id_to_upload_list_id, youtube_ids)
         max_result = 50
-        upload_list_dict: dict[str, dict] = {}
 
-        for list_id, channel_id in zip(upload_list_ids, youtube_ids):
-            self.logger.debug(f"get {channel_id}'s upload list")
-            request = self.youtube.playlistItems().list(
-                part="snippet",
-                maxResults=max_result,
-                playlistId=list_id,
-                fields="nextPageToken,items/snippet(publishedAt,title,description,resourceId/videoId)"
-            )
+        list_id = user_id_to_upload_list_id(youtube_id)
 
-            upload_videos = []
-            while request:
-                response = request.execute()
-                upload_videos.extend(response_to_video_list(response["items"]))
-                request = self.youtube.playlistItems().list_next(request, response)
+        self.logger.debug(f"get {youtube_id}'s upload list")
+        request = self.youtube.playlistItems().list(
+            part="snippet",
+            maxResults=max_result,
+            playlistId=list_id,
+            fields="nextPageToken,items/snippet(publishedAt,title,description,resourceId/videoId)"
+        )
 
-            upload_list_dict[channel_id] = upload_videos
+        upload_videos = []
+        while request:
+            response = request.execute()
+            upload_videos.extend(response_to_video_list(response["items"]))
+            request = self.youtube.playlistItems().list_next(request, response)
 
-        return upload_list_dict
+        save_youtube_video_datum(upload_videos, self.uploads_dir.joinpath(f"{youtube_id}.json"))
+
+        return len(upload_videos)
 
     def set_self_intro_video(self, target: VTuberMergedData) -> None:
         """target の投稿動画一覧から, 自己紹介動画を抽出"""
-        target.target_video = extract_self_intro_video(target)
+        target.target_video = extract_self_intro_video(target, self.uploads_dir)
         if not isinstance(target.target_video, MissingValue):
             self.logger.debug(f"found self-intro video {target.target_video.title}:{target.target_video.video_id}")
