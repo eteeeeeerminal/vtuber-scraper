@@ -6,8 +6,6 @@ from dataclasses import dataclass, asdict
 class VTuberData:
     name: str
 
-    twitter_id: str | None = None
-
     youtube_id: str | None = None
     youtube_description: str | None = None
 
