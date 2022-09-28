@@ -6,13 +6,27 @@ import re
 from typing import Callable
 from collections.abc import Iterable
 
-from .data_types import MissingValue, VTuberMergedData, YouTubeVideoData
+from .data_types import MissingValue, TwitterData, VTuberMergedData, YouTubeVideoData
 
 FilterFunc = Callable[[VTuberMergedData], bool]
 
 # twitter からのデータに関する条件
 def has_twitter(target: VTuberMergedData) -> bool:
-    return target.twitter is None
+    return isinstance(target.twitter, TwitterData)
+
+def has_twitter_detail(target: VTuberMergedData) -> bool:
+    if not isinstance(target.twitter, TwitterData):
+        return False
+    return bool(target.twitter.name)
+
+def tried_to_get_twitter_id(target: VTuberMergedData) -> bool:
+    if isinstance(target.twitter, TwitterData):
+        return True
+
+    if target.twitter == MissingValue.NotExist:
+        return True
+
+    return False
 
 twitter_filter_conds: tuple[FilterFunc] = (
     has_twitter,

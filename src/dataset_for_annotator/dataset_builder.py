@@ -10,7 +10,7 @@ from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
 from .data_collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
-    FilterFunc, youtube_basic_filter_conds, youtube_content_filter_conds,
+    FilterFunc, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
     got_upload_lists, tried_to_get_self_intro_video,
     adopt_filters
 )
@@ -34,7 +34,7 @@ class DatasetBuilder:
     UPLOADS_DIR = "uploads"
 
     def __init__(self,
-        save_dir: PathLike, youtube_api_key: str,
+        save_dir: PathLike, youtube_api_key: str, twitter_api_key: str,
         logger: logging.Logger = get_logger(__name__, logging.DEBUG)
     ) -> None:
         self.logger = logger
@@ -52,6 +52,7 @@ class DatasetBuilder:
         """self.vtuber_merged_datum の部分集合"""
 
         self.youtube_collector = YouTubeCollector(youtube_api_key, self.uploads_dir, self.logger)
+        self.twitter_collector = TwitterCollector(twitter_api_key, self.logger)
 
     def load_merged_datum(self) -> None:
         if not os.path.exists(self.merged_json_path):
@@ -69,14 +70,14 @@ class DatasetBuilder:
         # self.__complement_youtube_basic_info()
         # self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
         # self.__get_upload_videos()
-        self.__get_self_intro_videos()
+        # self.__get_self_intro_videos()
         self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
 
-        # for data in self.filtered_datum.values():
-        #     self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
-        #     self.logger.debug(f"----")
+        for data in self.filtered_datum.values():
+            self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
+            self.logger.debug(f"----")
 
-        # self.logger.debug(f"{len(self.filtered_datum)}")
+        self.logger.debug(f"{len(self.filtered_datum)}")
 
         self.__collect_twitter_data()
 
@@ -204,12 +205,28 @@ class DatasetBuilder:
         self.__save_merged_datum()
 
     def __collect_twitter_data(self) -> None:
-        ### データを埋める処理は個別でやるんじゃなくて、一旦キューに入れてあとでまとめてやるほうがいい？
-        ## Twitter id 分かってないやつは，youtube のチャンネルページからURL引っこ抜け
-        ### チャンネルページのリンク欄は API で取得できないぜ!
-        ## チャンネルの概要欄から Twitter id 引っこ抜け
-        ## チャンネル名 を Twitter で検索かけてそれっぽいアカウント引っこ抜け
-        pass
+        datum_not_tried_to_get_id = list(filter(
+            lambda x: not tried_to_get_twitter_id(x),
+            self.filtered_datum.values()
+        ))
+        self.logger.info(f"try to extract {len(datum_not_tried_to_get_id)}")
+        for data in datum_not_tried_to_get_id:
+            data.twitter = self.twitter_collector.extract_twitter_account(data)
+
+        datum_has_twitter = list(filter(
+            lambda x: has_twitter(x) and not has_twitter_detail(x),
+            self.filtered_datum.values()
+        ))
+        self.logger.info(f"will try to get {len(datum_has_twitter)} twitter datum")
+        for i, data in enumerate(datum_has_twitter):
+            self.twitter_collector.get_and_set_twitter_info(data)
+
+            # TODO: 保存周期定数で書け
+            if (i+1) % 20 == 0:
+                self.__save_merged_datum()
+
+        self.logger.info(f"DONE!")
+        self.__save_merged_datum()
 
     def __filter_all_data(self) -> None:
         pass

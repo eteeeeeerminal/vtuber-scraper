@@ -61,7 +61,11 @@ class TwitterData:
 
     @classmethod
     def from_json(cls, json_dict: dict):
-        return cls(**json_dict)
+        twitter_data = cls(**json_dict)
+        if twitter_data.twitter_id:
+            return twitter_data
+        else:
+            return MissingValue.Unacquired
 
 @dataclass
 class YouTubeVideoData:
