@@ -79,14 +79,20 @@ def response_to_channel_data(response: dict) -> YouTubeChannelData:
         description = response["snippet"]["description"],
         publish_time = response["snippet"]["publishedAt"],
         upload_list_id = response["contentDetails"]["relatedPlaylists"]["uploads"],
-        view_count = response["statistics"]["viewCount"],
-        subscriver_count = response["statistics"].get("subscriberCount", None),
-        video_count = response["statistics"]["videoCount"]
+        view_count = int(response["statistics"]["viewCount"]),
+        subscriber_count = int(response["statistics"].get("subscriberCount", None)),
+        video_count = int(response["statistics"]["videoCount"])
     )
 
 class YouTubeChannelScraper:
     """ vpost で取得できていない分の VTuber のチャンネルの情報を取得"""
     def __init__(self, save_dir: str, api_key: str, vpost_data_path: str) -> None:
+        """
+        Args:
+            save_dir (str): 保存先のディレクトリ. 取得対象の channel id も `save_dir/search_result.json` から取得.
+            api_key (str): YouTube Data API の api key
+            vpost_data_path (str): `vpost_data_path` 以下にすでに保存済みのチャンネルは取得しない.
+        """
         self.save_dir = pathlib.Path(save_dir)
         self.save_path = self.save_dir.joinpath("channels.json")
         self.result_path = self.save_dir.joinpath(SEARCH_RESULT_JSON_NAME)

@@ -1,9 +1,11 @@
 import json
+import re
 import datetime
 from dataclasses import dataclass, asdict
 
 def str_to_datetime(timestamp: str) -> datetime.datetime:
     timestamp = timestamp.replace("Z", "+00:00")
+    timestamp = re.sub(r"\.[\d]+", "", timestamp)
     return datetime.datetime.fromisoformat(timestamp)
 
 
@@ -67,7 +69,7 @@ class YouTubeChannelData:
 
     upload_list_id: str
     view_count: int
-    subscriver_count: int | None # 非公開なら None
+    subscriber_count: int | None # 非公開なら None
     video_count: int
 
     @classmethod

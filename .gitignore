@@ -2,7 +2,12 @@
 
 *hoge*
 __pycache__
+*.log
 
-# ダウンロードしたデータ
+# ダウンロードしたデータなど
 vpost_data
 yt_data
+dataset
+
+# テスト用のあれこれ
+temp
