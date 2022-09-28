@@ -2,6 +2,7 @@
 
 *hoge*
 __pycache__
+*.log
 
 # ダウンロードしたデータなど
 vpost_data
