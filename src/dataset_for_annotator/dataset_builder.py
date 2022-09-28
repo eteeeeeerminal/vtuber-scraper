@@ -110,7 +110,7 @@ class DatasetBuilder:
                     data.registrants_n, data.play_times, data.upload_videos
                 ),
                 MissingValue.Unacquired,
-                MissingValue.Unacquired if data.twitter_id else TwitterData(data.twitter_id)
+                MissingValue.Unacquired
             )
 
         self.logger.info(f"load VTuberDetails from {vpost_detail_json_path}")
@@ -125,15 +125,16 @@ class DatasetBuilder:
                 self.logger.info(f"VTuberData correspond to {detail.youtube_id} is not exist. skip.")
                 continue
 
-            raise Exception("upload_videos の読み込み方変えなさい")
             merged_data = self.vtuber_merged_datum[detail.youtube_id]
+
+            merged_data.twitter = TwitterData(detail.twitter_id.replace("@", "")) if detail.twitter_id else MissingValue.Unacquired
+
             merged_data.youtube.channel_description = detail.description
             if detail.recent_videos:
-                merged_data.youtube.upload_videos = list(
-                    map(videodata_to_youtube_videodata, detail.recent_videos)
+                save_youtube_video_datum(
+                    map(videodata_to_youtube_videodata, detail.recent_videos),
+                    self.uploads_dir.joinpath(f"{detail.youtube_id}.json")
                 )
-
-            merged_data.twitter = MissingValue.Unacquired if detail.twitter_id else TwitterData(detail.twitter_id)
 
         self.logger.info(f"DONE! vpost data has loaded")
         self.__save_merged_datum()
