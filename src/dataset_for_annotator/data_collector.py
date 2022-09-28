@@ -8,6 +8,7 @@ import pathlib
 from typing import Iterable
 
 from apiclient import discovery
+from googleapiclient.errors import HttpError
 
 from dataset_for_annotator.data_filter import got_upload_lists, is_self_intro_video
 from utils.file import PathLike
@@ -130,11 +131,15 @@ class YouTubeCollector:
             fields="nextPageToken,items/snippet(publishedAt,title,description,resourceId/videoId)"
         )
 
+        # TODO: 404 に対応する
         upload_videos = []
-        while request:
-            response = request.execute()
-            upload_videos.extend(response_to_video_list(response["items"]))
-            request = self.youtube.playlistItems().list_next(request, response)
+        try:
+            while request:
+                response = request.execute()
+                upload_videos.extend(response_to_video_list(response["items"]))
+                request = self.youtube.playlistItems().list_next(request, response)
+        except HttpError as e:
+            self.logger.info(f"failed at {youtube_id} for {e.status_code}")
 
         save_youtube_video_datum(upload_videos, self.uploads_dir.joinpath(f"{youtube_id}.json"))
 
