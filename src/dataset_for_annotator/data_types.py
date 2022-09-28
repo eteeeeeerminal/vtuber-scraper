@@ -47,6 +47,7 @@ def json_to_missing_value_or_any(
 @dataclass
 class TwitterData:
     twitter_id: str
+    """先頭の'@'は消すこと"""
     name: str | None = None
     profile_text: str | None = None
 
@@ -63,6 +64,7 @@ class TwitterData:
     def from_json(cls, json_dict: dict):
         twitter_data = cls(**json_dict)
         if twitter_data.twitter_id:
+            twitter_data.twitter_id.replace("@", "")
             return twitter_data
         else:
             return MissingValue.Unacquired
