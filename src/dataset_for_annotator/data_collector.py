@@ -117,7 +117,7 @@ class YouTubeCollector:
         self.logger = logger
         self.uploads_dir = pathlib.Path(uploads_dir)
 
-    def get_upload_video_list(self, youtube_id) -> int:
+    def get_upload_video_list(self, youtube_id) -> int | None:
         """指定されたチャンネルの投稿動画リストを取得"""
         max_result = 50
 
@@ -131,7 +131,6 @@ class YouTubeCollector:
             fields="nextPageToken,items/snippet(publishedAt,title,description,resourceId/videoId)"
         )
 
-        # TODO: 404 に対応する
         upload_videos = []
         try:
             while request:
@@ -140,6 +139,10 @@ class YouTubeCollector:
                 request = self.youtube.playlistItems().list_next(request, response)
         except HttpError as e:
             self.logger.info(f"failed at {youtube_id} for {e.status_code}")
+            if e.status_code == 404:
+                return 0
+            elif e.status_code == 403:
+                return None
 
         save_youtube_video_datum(upload_videos, self.uploads_dir.joinpath(f"{youtube_id}.json"))
 
