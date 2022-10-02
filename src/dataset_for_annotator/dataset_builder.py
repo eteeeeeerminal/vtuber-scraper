@@ -156,7 +156,7 @@ class DatasetBuilder:
                 YouTubeData(
                     data.channel_id, data.title, data.description,
                     data.publish_time.replace(tzinfo=JST),
-                    data.subscriber_count, data.view_count, data.video_count
+                    int(data.subscriber_count), int(data.view_count), int(data.video_count)
                 ),
                 MissingValue.Unacquired,
                 MissingValue.Unacquired
@@ -201,7 +201,8 @@ class DatasetBuilder:
         for i, vtuber_id in enumerate(target_ids):
             got_video_n = self.youtube_collector.get_upload_video_list(vtuber_id)
             self.vtuber_merged_datum[vtuber_id].youtube.got_video_n = got_video_n
-            self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
+            if got_video_n and self.vtuber_merged_datum[vtuber_id].youtube.video_count_n < got_video_n:
+                self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
 
             if (i+1) % 20 == 0:
                 self.__save_merged_datum()
