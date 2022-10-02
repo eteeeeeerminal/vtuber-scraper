@@ -165,6 +165,20 @@ class DatasetBuilder:
         self.logger.info(f"DONE! youtube data has loaded")
         self.__save_merged_datum()
 
+    def load_upload_videos(self) -> None:
+        self.logger.info(f"load upload videos")
+        for vtuber_id in self.vtuber_merged_datum.keys():
+            uploads_path = self.uploads_dir.joinpath(f"{vtuber_id}.json")
+            if not os.path.isfile(uploads_path):
+                continue
+
+            uploads = load_youtube_video_datum(uploads_path)
+            if uploads:
+                self.vtuber_merged_datum[vtuber_id].youtube.got_video_n = len(uploads)
+
+        self.logger.info(f"DONE!")
+        self.__save_merged_datum()
+
     def __complement_youtube_basic_info(self) -> None:
         # youtube の基本情報を揃える
         ## 足りないもの
