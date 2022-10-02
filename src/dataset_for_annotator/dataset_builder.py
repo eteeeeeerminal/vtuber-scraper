@@ -205,6 +205,11 @@ class DatasetBuilder:
             if got_video_n and self.vtuber_merged_datum[vtuber_id].youtube.video_count_n < got_video_n:
                 self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
 
+            if got_video_n == self.vtuber_merged_datum[vtuber_id].youtube.got_video_n:
+                # 動画数が減っていた場合
+                # 2度目の取得でも upload videos の数が変わらないなら, 最大値から減っていても, 今はそれだけしか取得できないのだろう
+                self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
+
             if (i+1) % 20 == 0:
                 self.__save_merged_datum()
 
