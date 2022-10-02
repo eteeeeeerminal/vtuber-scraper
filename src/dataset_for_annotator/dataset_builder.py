@@ -117,9 +117,10 @@ class DatasetBuilder:
         vpost_vtuber_detail: list[VTuberDetails] = load_detail_datum(vpost_detail_json_path)
 
         for detail in vpost_vtuber_detail:
-            if not does_update and data.youtube_id in self.vtuber_merged_datum:
-                # データの更新なし
-                continue
+            # if not does_update and data.youtube_id in self.vtuber_merged_datum:
+            #    # データの更新なし
+            #    # TODO: 上ですでに読み込みをしてるので, このままだと新規データだけ読み込むのができない
+            #     continue
 
             if detail.youtube_id not in self.vtuber_merged_datum:
                 self.logger.info(f"VTuberData correspond to {detail.youtube_id} is not exist. skip.")
