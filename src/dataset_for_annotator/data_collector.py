@@ -142,6 +142,7 @@ class YouTubeCollector:
             if e.status_code == 404:
                 return 0
             elif e.status_code == 403:
+                raise Exception("API の使用上限")
                 return None
 
         save_youtube_video_datum(upload_videos, self.uploads_dir.joinpath(f"{youtube_id}.json"))
