@@ -10,11 +10,12 @@ from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
 from .data_types.common import JST, MissingValue
 from .data_types.merged import BuilderMergedData, TwitterData, VTuberMergedData, YouTubeData, load_youtube_video_datum, save_vtuber_merged_datum, videodata_to_youtube_videodata, load_vtuber_merged_datum, save_youtube_video_datum
+from .data_types.dataset import VTuberDatasetItem, save_vtuber_dataset_items
 from .collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
-    FilterFunc, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
+    FilterFunc, found_self_intro_video, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
     got_upload_lists, tried_to_get_self_intro_video,
-    adopt_filters
+    all_filter_conditions, adopt_filters
 )
 
 def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: BuilderMergedData) -> BuilderMergedData:
@@ -62,7 +63,7 @@ class DatasetBuilder:
         self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
         # self.__complement_youtube_basic_info()
         # self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
-        self.__get_upload_videos()
+        # self.__get_upload_videos()
         self.__get_self_intro_videos()
         self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
 
@@ -74,7 +75,7 @@ class DatasetBuilder:
 
         # self.__collect_twitter_data()
 
-        self.__filter_all_data()
+        self.filtered_datum = filter_vtuber_dict(all_filter_conditions, self.filtered_datum)
         self.__output_dataset()
 
     def load_vpostdata(self,
@@ -213,7 +214,10 @@ class DatasetBuilder:
         self.logger.info("extract self intro video")
         list(map(
             self.youtube_collector.set_self_intro_video,
-            self.filtered_datum.values()
+            filter(
+                lambda x: not found_self_intro_video(x),
+                self.filtered_datum.values()
+            )
         ))
         self.logger.info("DONE!")
 
@@ -252,5 +256,8 @@ class DatasetBuilder:
         self.logger.info(f"saved merged datum to {self.merged_json_path}")
 
     def __output_dataset(self) -> None:
-        pass
-
+        self.logger.info(f"output dataset")
+        save_items = map(VTuberDatasetItem.from_vtuber_merged_data, self.filtered_datum.values())
+        self.logger.info(f"will save {len(self.filtered_datum)} data items")
+        save_vtuber_dataset_items(save_items, self.dataset_json_path)
+        self.logger.info(f"DONE!")
