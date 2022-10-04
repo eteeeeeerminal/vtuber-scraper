@@ -8,7 +8,7 @@ from utils.logger import get_logger
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
 from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
-from .data_collector import TwitterCollector, YouTubeCollector
+from .collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
     FilterFunc, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
     got_upload_lists, tried_to_get_self_intro_video,
@@ -17,6 +17,7 @@ from .data_filter import (
 from vpost.vtuber_data import VTuberData, VTuberDetails, VideoData, load_detail_datum, load_vtuber_datum
 
 # ちょっとどこに置くか考える必要あるかも
+# これはローダー周りで固める
 def videodata_to_youtube_videodata(video_data: VideoData) -> YouTubeVideoData:
     video_data.timestamp = video_data.timestamp.replace(tzinfo=JST)
     return YouTubeVideoData(
@@ -69,17 +70,17 @@ class DatasetBuilder:
         self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
         # self.__complement_youtube_basic_info()
         # self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
-        # self.__get_upload_videos()
-        # self.__get_self_intro_videos()
+        self.__get_upload_videos()
+        self.__get_self_intro_videos()
         self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
 
-        for data in self.filtered_datum.values():
-            self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
-            self.logger.debug(f"----")
+        # for data in self.filtered_datum.values():
+        #    self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
+        #    self.logger.debug(f"----")
 
         self.logger.debug(f"{len(self.filtered_datum)}")
 
-        self.__collect_twitter_data()
+        # self.__collect_twitter_data()
 
         self.__filter_all_data()
         self.__output_dataset()
@@ -227,6 +228,7 @@ class DatasetBuilder:
         self.__save_merged_datum()
 
     def __collect_twitter_data(self) -> None:
+        """Twitter データの収集, データセットに含めないことにするのでいったん後回し"""
         datum_not_tried_to_get_id = list(filter(
             lambda x: not tried_to_get_twitter_id(x),
             self.filtered_datum.values()
