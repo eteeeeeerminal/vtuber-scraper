@@ -1,7 +1,8 @@
 import re
 import logging
 
-from dataset_for_annotator.data_types import MissingValue, TwitterData, VTuberMergedData
+from ..data_types.common import MissingValue
+from ..data_types.merged import TwitterData, VTuberMergedData
 
 TWITTER_URL_PATTERN = re.compile(r"https://twitter.com/([\w]+)")
 def extract_twitter_id(target: str) -> str | None:

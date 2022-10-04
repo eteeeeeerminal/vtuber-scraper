@@ -6,9 +6,10 @@ from apiclient import discovery
 from googleapiclient.errors import HttpError
 
 from utils.file import PathLike
-from dataset_for_annotator.data_types import MissingValue, VTuberMergedData, YouTubeVideoData, load_youtube_video_datum, save_youtube_video_datum
-from dataset_for_annotator.data_filter import got_upload_lists, is_self_intro_video
 from youtube.youtube_data import str_to_datetime
+
+from ..data_types.merged import MissingValue, VTuberMergedData, YouTubeVideoData, load_youtube_video_datum, save_youtube_video_datum
+from ..data_filter import got_upload_lists, is_self_intro_video
 
 
 def user_id_to_upload_list_id(user_id: str) -> str:

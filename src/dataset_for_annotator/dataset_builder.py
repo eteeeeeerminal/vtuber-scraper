@@ -7,7 +7,8 @@ from utils.file import PathLike
 from utils.logger import get_logger
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
-from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
+from .data_types.common import JST, MissingValue
+from .data_types.merged import TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
 from .collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
     FilterFunc, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
