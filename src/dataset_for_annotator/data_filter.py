@@ -6,7 +6,8 @@ import re
 from typing import Callable
 from collections.abc import Iterable
 
-from .data_types import MissingValue, TwitterData, VTuberMergedData, YouTubeVideoData
+from .data_types.common import MissingValue
+from .data_types.merged import TwitterData, YouTubeVideoData, VTuberMergedData
 
 FilterFunc = Callable[[VTuberMergedData], bool]
 

@@ -5,26 +5,19 @@ import datetime
 
 from utils.file import PathLike
 from utils.logger import get_logger
+from vpost.vtuber_data import VTuberData, VTuberDetails, load_detail_datum, load_vtuber_datum
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
-from .data_types import JST, MissingValue, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
-from .data_collector import TwitterCollector, YouTubeCollector
+from .data_types.common import JST, MissingValue
+from .data_types.merged import BuilderMergedData, TwitterData, VTuberMergedData, YouTubeData, load_youtube_video_datum, save_vtuber_merged_datum, videodata_to_youtube_videodata, load_vtuber_merged_datum, save_youtube_video_datum
+from .collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
     FilterFunc, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
     got_upload_lists, tried_to_get_self_intro_video,
     adopt_filters
 )
-from vpost.vtuber_data import VTuberData, VTuberDetails, VideoData, load_detail_datum, load_vtuber_datum
 
-# ちょっとどこに置くか考える必要あるかも
-def videodata_to_youtube_videodata(video_data: VideoData) -> YouTubeVideoData:
-    video_data.timestamp = video_data.timestamp.replace(tzinfo=JST)
-    return YouTubeVideoData(
-        video_data.video_id, video_data.title,
-        None, video_data.timestamp
-    )
-
-def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: dict[str, VTuberMergedData]) -> dict[str, VTuberMergedData]:
+def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: BuilderMergedData) -> BuilderMergedData:
     filterd = adopt_filters(filter_conds, target.values())
     return {f.vtuber_id: f for f in filterd}
 
@@ -46,9 +39,9 @@ class DatasetBuilder:
         self.merged_json_path = save_dir.joinpath(self.MERGED_JSON_NAME)
         self.dataset_json_path = save_dir.joinpath(self.DATASET_JSON_NAME)
 
-        self.vtuber_merged_datum: dict[str, VTuberMergedData] = {}
+        self.vtuber_merged_datum: BuilderMergedData = {}
         """key: vtuber_id, value: VTuberMergedData"""
-        self.filtered_datum: dict[str, VTuberMergedData] = self.vtuber_merged_datum
+        self.filtered_datum: BuilderMergedData = self.vtuber_merged_datum
         """self.vtuber_merged_datum の部分集合"""
 
         self.youtube_collector = YouTubeCollector(youtube_api_key, self.uploads_dir, self.logger)
@@ -69,17 +62,17 @@ class DatasetBuilder:
         self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
         # self.__complement_youtube_basic_info()
         # self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
-        # self.__get_upload_videos()
-        # self.__get_self_intro_videos()
+        self.__get_upload_videos()
+        self.__get_self_intro_videos()
         self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
 
-        for data in self.filtered_datum.values():
-            self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
-            self.logger.debug(f"----")
+        # for data in self.filtered_datum.values():
+        #    self.logger.debug(f"{data.youtube.name}: {data.youtube.channel_description}")
+        #    self.logger.debug(f"----")
 
         self.logger.debug(f"{len(self.filtered_datum)}")
 
-        self.__collect_twitter_data()
+        # self.__collect_twitter_data()
 
         self.__filter_all_data()
         self.__output_dataset()
@@ -117,9 +110,10 @@ class DatasetBuilder:
         vpost_vtuber_detail: list[VTuberDetails] = load_detail_datum(vpost_detail_json_path)
 
         for detail in vpost_vtuber_detail:
-            if not does_update and data.youtube_id in self.vtuber_merged_datum:
-                # データの更新なし
-                continue
+            # if not does_update and data.youtube_id in self.vtuber_merged_datum:
+            #    # データの更新なし
+            #    # TODO: 上ですでに読み込みをしてるので, このままだと新規データだけ読み込むのができない
+            #     continue
 
             if detail.youtube_id not in self.vtuber_merged_datum:
                 self.logger.info(f"VTuberData correspond to {detail.youtube_id} is not exist. skip.")
@@ -156,13 +150,27 @@ class DatasetBuilder:
                 YouTubeData(
                     data.channel_id, data.title, data.description,
                     data.publish_time.replace(tzinfo=JST),
-                    data.subscriber_count, data.view_count, data.video_count
+                    int(data.subscriber_count), int(data.view_count), int(data.video_count)
                 ),
                 MissingValue.Unacquired,
                 MissingValue.Unacquired
             )
 
         self.logger.info(f"DONE! youtube data has loaded")
+        self.__save_merged_datum()
+
+    def load_upload_videos(self) -> None:
+        self.logger.info(f"load upload videos")
+        for vtuber_id in self.vtuber_merged_datum.keys():
+            uploads_path = self.uploads_dir.joinpath(f"{vtuber_id}.json")
+            if not os.path.isfile(uploads_path):
+                continue
+
+            uploads = load_youtube_video_datum(uploads_path)
+            if uploads:
+                self.vtuber_merged_datum[vtuber_id].youtube.got_video_n = len(uploads)
+
+        self.logger.info(f"DONE!")
         self.__save_merged_datum()
 
     def __complement_youtube_basic_info(self) -> None:
@@ -187,7 +195,13 @@ class DatasetBuilder:
         for i, vtuber_id in enumerate(target_ids):
             got_video_n = self.youtube_collector.get_upload_video_list(vtuber_id)
             self.vtuber_merged_datum[vtuber_id].youtube.got_video_n = got_video_n
-            self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
+            if got_video_n and self.vtuber_merged_datum[vtuber_id].youtube.video_count_n < got_video_n:
+                self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
+
+            if got_video_n == self.vtuber_merged_datum[vtuber_id].youtube.got_video_n:
+                # 動画数が減っていた場合
+                # 2度目の取得でも upload videos の数が変わらないなら, 最大値から減っていても, 今はそれだけしか取得できないのだろう
+                self.vtuber_merged_datum[vtuber_id].youtube.video_count_n = got_video_n
 
             if (i+1) % 20 == 0:
                 self.__save_merged_datum()
@@ -206,6 +220,7 @@ class DatasetBuilder:
         self.__save_merged_datum()
 
     def __collect_twitter_data(self) -> None:
+        """Twitter データの収集, データセットに含めないことにするのでいったん後回し"""
         datum_not_tried_to_get_id = list(filter(
             lambda x: not tried_to_get_twitter_id(x),
             self.filtered_datum.values()

@@ -10,7 +10,9 @@ sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
 
-from src.dataset_for_annotator.data_types import *
+from dataset_for_annotator.data_types.common import *
+from dataset_for_annotator.data_types.merged import *
+from dataset_for_annotator.data_types.dataset import *
 
 TEMP_DIR = Path("temp")
 os.makedirs(TEMP_DIR, exist_ok=True)

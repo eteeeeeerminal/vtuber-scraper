@@ -3,6 +3,7 @@
 *hoge*
 __pycache__
 *.log
+*.zip
 
 # ダウンロードしたデータなど
 vpost_data
