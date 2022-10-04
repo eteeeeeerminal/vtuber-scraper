@@ -5,26 +5,17 @@ import datetime
 
 from utils.file import PathLike
 from utils.logger import get_logger
+from vpost.vtuber_data import VTuberData, VTuberDetails, load_detail_datum, load_vtuber_datum
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
 from .data_types.common import JST, MissingValue
-from .data_types.merged import BuilderMergedData, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
+from .data_types.merged import BuilderMergedData, TwitterData, VTuberMergedData, YouTubeData, load_youtube_video_datum, save_vtuber_merged_datum, videodata_to_youtube_videodata, load_vtuber_merged_datum, save_youtube_video_datum
 from .collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
     FilterFunc, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
     got_upload_lists, tried_to_get_self_intro_video,
     adopt_filters
 )
-from vpost.vtuber_data import VTuberData, VTuberDetails, VideoData, load_detail_datum, load_vtuber_datum
-
-# ちょっとどこに置くか考える必要あるかも
-# これはローダー周りで固める
-def videodata_to_youtube_videodata(video_data: VideoData) -> YouTubeVideoData:
-    video_data.timestamp = video_data.timestamp.replace(tzinfo=JST)
-    return YouTubeVideoData(
-        video_data.video_id, video_data.title,
-        None, video_data.timestamp
-    )
 
 def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: BuilderMergedData) -> BuilderMergedData:
     filterd = adopt_filters(filter_conds, target.values())

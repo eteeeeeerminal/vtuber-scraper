@@ -2,7 +2,8 @@ import datetime
 from dataclasses import dataclass, asdict
 
 from utils.file import PathLike, load_json, save_json
-from .common import MissingValue, json_to_missing_value_or_any, date_handler
+from vpost.vtuber_data import VideoData
+from .common import JST, MissingValue, json_to_missing_value_or_any, date_handler
 
 @dataclass
 class TwitterData:
@@ -54,6 +55,13 @@ def load_youtube_video_datum(json_path: PathLike) -> list[YouTubeVideoData]:
 def save_youtube_video_datum(video_datum: list[YouTubeVideoData], json_path: PathLike) -> None:
     save_obj = [asdict(v) for v in video_datum]
     save_json(json_path, save_obj, date_handler)
+
+def videodata_to_youtube_videodata(video_data: VideoData) -> YouTubeVideoData:
+    video_data.timestamp = video_data.timestamp.replace(tzinfo=JST)
+    return YouTubeVideoData(
+        video_data.video_id, video_data.title,
+        None, video_data.timestamp
+    )
 
 @dataclass
 class YouTubeData:
