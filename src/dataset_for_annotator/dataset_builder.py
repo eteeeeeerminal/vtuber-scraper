@@ -8,7 +8,7 @@ from utils.logger import get_logger
 from youtube.youtube_data import YouTubeChannelData, load_channel_datum
 
 from .data_types.common import JST, MissingValue
-from .data_types.merged import TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
+from .data_types.merged import BuilderMergedData, TwitterData, VTuberMergedData, YouTubeData, YouTubeVideoData, load_youtube_video_datum, save_vtuber_merged_datum, load_vtuber_merged_datum, save_youtube_video_datum
 from .collector import TwitterCollector, YouTubeCollector
 from .data_filter import (
     FilterFunc, has_twitter, has_twitter_detail, tried_to_get_twitter_id, youtube_basic_filter_conds, youtube_content_filter_conds,
@@ -26,7 +26,7 @@ def videodata_to_youtube_videodata(video_data: VideoData) -> YouTubeVideoData:
         None, video_data.timestamp
     )
 
-def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: dict[str, VTuberMergedData]) -> dict[str, VTuberMergedData]:
+def filter_vtuber_dict(filter_conds: tuple[FilterFunc], target: BuilderMergedData) -> BuilderMergedData:
     filterd = adopt_filters(filter_conds, target.values())
     return {f.vtuber_id: f for f in filterd}
 
@@ -48,9 +48,9 @@ class DatasetBuilder:
         self.merged_json_path = save_dir.joinpath(self.MERGED_JSON_NAME)
         self.dataset_json_path = save_dir.joinpath(self.DATASET_JSON_NAME)
 
-        self.vtuber_merged_datum: dict[str, VTuberMergedData] = {}
+        self.vtuber_merged_datum: BuilderMergedData = {}
         """key: vtuber_id, value: VTuberMergedData"""
-        self.filtered_datum: dict[str, VTuberMergedData] = self.vtuber_merged_datum
+        self.filtered_datum: BuilderMergedData = self.vtuber_merged_datum
         """self.vtuber_merged_datum の部分集合"""
 
         self.youtube_collector = YouTubeCollector(youtube_api_key, self.uploads_dir, self.logger)

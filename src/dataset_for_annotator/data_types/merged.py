@@ -113,3 +113,5 @@ def save_vtuber_merged_datum(datum: list[VTuberMergedData], json_path: PathLike)
     save_obj = [asdict(d) for d in datum]
     save_json(json_path, save_obj, date_handler)
 
+BuilderMergedData = dict[str, VTuberMergedData]
+"""key: youtube_id, value: merged data"""
