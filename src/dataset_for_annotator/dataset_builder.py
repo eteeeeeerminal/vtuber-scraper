@@ -2,6 +2,7 @@ import logging
 import pathlib
 import os
 import datetime
+import random
 
 from utils.file import PathLike
 from utils.logger import get_logger
@@ -26,6 +27,7 @@ class DatasetBuilder:
     MERGED_JSON_NAME = "merged.json"
     DATASET_JSON_NAME = "dataset.json"
     UPLOADS_DIR = "uploads"
+    DATASET_MAX = 1000
 
     def __init__(self,
         save_dir: PathLike, youtube_api_key: str, twitter_api_key: str,
@@ -257,7 +259,10 @@ class DatasetBuilder:
 
     def __output_dataset(self) -> None:
         self.logger.info(f"output dataset")
-        save_items = map(VTuberDatasetItem.from_vtuber_merged_data, self.filtered_datum.values())
-        self.logger.info(f"will save {len(self.filtered_datum)} data items")
+        save_items = list(self.filtered_datum.values())
+        random.shuffle(save_items)
+        save_items = save_items[:self.DATASET_MAX]
+        self.logger.info(f"will save {len(save_items)} data items")
+        save_items = map(VTuberDatasetItem.from_vtuber_merged_data, save_items)
         save_vtuber_dataset_items(save_items, self.dataset_json_path)
         self.logger.info(f"DONE!")
