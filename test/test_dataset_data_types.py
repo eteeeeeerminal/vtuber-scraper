@@ -64,24 +64,24 @@ def vtuber_dataset_items() -> list[VTuberDatasetItem]:
     return [
         VTuberDatasetItem(
             "TestCase1-hoge", datetime.datetime.fromisoformat("2022-10-10T15:12:01+09:00"),
-            TwitterDatasetItem(
-                "testcasehoge", "ほげほげふが@新人VTuber", "フォローしてください",
-                "header-url-hoge", "icon-url-hoge", ["tweet-hoge", "tweet-fuga"], "tweet-pinned"
-            ),
             YouTubeDatasetItem(
-                "TestCase1-hoge", "self-intro-video"
+                "TestCase1-hoge", "テストくん",
+                YouTubeVideoData(
+                    "videohoge", "hogehogeohge",
+                    "ほげほげです",
+                    datetime.datetime.fromisoformat("2020-08-10T07:30:00+09:00")
+                )
             )
         ),
         VTuberDatasetItem(
             "TestCase3-Full", datetime.datetime.fromisoformat("2022-10-01T15:12:01+09:00"),
-            TwitterDatasetItem(
-                "testcasefull", "全要素アリ@VTuber", "VTuberやってます！",
-                "header-url", "icon-url", [
-                    "tweet1", "tweet2", "tweet3", "tweet4", "tweet5", "tweet6"
-                ], None
-            ),
             YouTubeDatasetItem(
-                "TestCase3-Full", "video1"
+                "TestCase3-Full", "Test Ch. 全要素 アリ",
+                YouTubeVideoData(
+                    "video1", "【VTuber自己紹介】はじめまして。全要素 アリです。",
+                    "ハロハロ！〇〇VTuberの全要素 アリです。これからよろしくおねがいします。",
+                    datetime.datetime.fromisoformat("2019-04-20T08:30:00+09:00")
+                ),
             )
         )
     ]

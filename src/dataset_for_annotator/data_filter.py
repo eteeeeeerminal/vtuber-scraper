@@ -102,7 +102,7 @@ youtube_content_filter_conds: tuple[FilterFunc] = (
 youtube_filter_conds: tuple[FilterFunc] = youtube_basic_filter_conds + youtube_content_filter_conds
 
 
-all_filter_conditions: tuple[FilterFunc] = youtube_filter_conds + twitter_filter_conds
+all_filter_conditions: tuple[FilterFunc] = youtube_filter_conds # + twitter_filter_conds
 
 def adopt_filters(filter_conditions: tuple[FilterFunc], target: Iterable[VTuberMergedData]) -> Iterable[VTuberMergedData]:
     """target に filter_conditions で渡した条件を全て適用してフィルターする"""
