@@ -56,11 +56,13 @@ def got_upload_lists(target: VTuberMergedData) -> bool:
 
 def ng_words_filter(target: VTuberMergedData) -> bool:
     description_ng_words = (
-        "コンドーム", # 公式アンバサダーがいたので
+        "コンドーム",  # 公式アンバサダーがいたので
     )
     description_ng_words = list(map(re.compile, description_ng_words))
 
-    title_ng_words = ("切り抜き",)
+    title_ng_words = (
+        "切り抜き",
+    )
     title_ng_patterns = list(map(re.compile, title_ng_words)) + description_ng_words
 
     if any(map(lambda x: x.search(target.youtube.name), title_ng_patterns)):
@@ -118,18 +120,36 @@ def is_self_intro_video(video: YouTubeVideoData) -> bool:
     # nice_to_meet_you = re.compile("はじめまして")
     ## ノイズが多かったので一旦除外
     self_intro = re.compile("自己紹介")
-    q_and_a_templete = re.compile("一問一答")
     clip = re.compile("切り抜き")
     live = re.compile("配信")
     colab = re.compile("コラボ")
     ng_patterns = (
         "生放送アーカイブ",
+        "エイプリルフール", "2人組", "ふたりで",
+        "記念枠", "雑談", "Apex 練習", # 配信は長いので除外
+        "100の質問", "1キル1答", "100個の質問", "【龍玉寺或斗】", "【 Dead by Daylight 】", # 長い
+        "英語で", "歌曲", "自我介绍", "Español", "韓国語で", "【Дебют】", # 日本語じゃなかったりするので除外
+        "自己紹介メイキング", "今日のおすすめキャスト", "#コミケ", "自己紹介動画を見る",
+        "一問一答", # 企画の影響が強すぎて個性が出ないので除外
+        "赤城まやの自己紹介と質問箱返信！", "【動画撮影】", "【スタマス】", "りりてれ", "リトルナイトメアやってみた", # 長い
+        "シルエット自己紹介動画", "『自己紹介動画』あるある", "アイドル風自己紹介動画選手権"
     )
     ng_patterns = list(map(re.compile, ng_patterns))
+
+    ng_patterns_in_description = (
+        "#vtuber一問一答自己紹介",
+        "【Self-Introduction】", # 英語率高い
+    )
+    ng_patterns_in_description = list(map(re.compile, ng_patterns_in_description))
 
     if any(map(lambda x: x.search(video.title), ng_patterns)):
         # 1つでも ng ワードがあれば除外
         return False
+
+    if video.description:
+        if any(map(lambda x: x.search(video.description), ng_patterns_in_description)):
+            # 1つでも ng ワードがあれば除外
+            return False
 
     if colab.search(video.title) or (video.description and colab.search(video.description)):
         # コラボは除外
@@ -137,10 +157,6 @@ def is_self_intro_video(video: YouTubeVideoData) -> bool:
 
     if live.search(video.title) and not clip.search(video.title):
         # 切り抜きじゃない配信アーカイブの場合, 長いので除外
-        return False
-
-    if q_and_a_templete.search(video.title):
-        # 一問一答自己紹介 は個性が分かりにくくなるので除外
         return False
 
     if self_intro.search(video.title):
