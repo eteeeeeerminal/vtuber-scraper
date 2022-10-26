@@ -66,7 +66,7 @@ def load_vtuber_dataset_items(json_path: PathLike) -> list[VTuberDatasetItem]:
     vtuber_dataset_items = load_json(json_path)
     return list(map(VTuberDatasetItem.from_json, vtuber_dataset_items))
 
-def save_vtuber_dataset_items(items: list[VTuberDatasetItem], json_path: PathLike) -> None:
+def save_vtuber_dataset_items(items: list[VTuberDatasetItem], json_path: PathLike, shape_output: bool = True) -> None:
     save_obj = [asdict(d) for d in items]
-    save_json(json_path, save_obj, date_handler)
+    save_json(json_path, save_obj, date_handler, shape_output)
 

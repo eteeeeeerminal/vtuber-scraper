@@ -15,8 +15,9 @@ load_dotenv()
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
 TWITTER_API_KEY = ""
 
-builder = DatasetBuilder("dataset", YOUTUBE_API_KEY, TWITTER_API_KEY, 2000)
+builder = DatasetBuilder("dataset", YOUTUBE_API_KEY, TWITTER_API_KEY, 2000, True)
 builder.load_merged_datum()
+# builder.load_upload_videos()
 # builder.load_vpostdata(VPOST_DATA_PATH, VPOST_DETAIL_PATH)
 # builder.load_ytdata(YOUTUBE_DATA_PATH)
 

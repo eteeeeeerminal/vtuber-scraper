@@ -30,7 +30,7 @@ class DatasetBuilder:
 
     def __init__(self,
         save_dir: PathLike, youtube_api_key: str, twitter_api_key: str,
-        dataset_max: int,
+        dataset_max: int, shape_output: bool,
         logger: logging.Logger = get_logger(__name__, logging.DEBUG)
     ) -> None:
         self.logger = logger
@@ -50,6 +50,7 @@ class DatasetBuilder:
         self.youtube_collector = YouTubeCollector(youtube_api_key, self.uploads_dir, self.logger)
         self.twitter_collector = TwitterCollector(twitter_api_key, self.logger)
         self.DATASET_MAX = dataset_max
+        self.shape_output = shape_output
 
     def load_merged_datum(self) -> None:
         if not os.path.exists(self.merged_json_path):
@@ -64,7 +65,7 @@ class DatasetBuilder:
     def build(self) -> None:
         self.filtered_datum = self.vtuber_merged_datum
         self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
-        self.__get_upload_videos()
+        # self.__get_upload_videos()
         self.__get_self_intro_videos()
         self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
 
@@ -263,5 +264,5 @@ class DatasetBuilder:
         save_items = save_items[:self.DATASET_MAX]
         self.logger.info(f"will save {len(save_items)} data items")
         save_items = map(VTuberDatasetItem.from_vtuber_merged_data, save_items)
-        save_vtuber_dataset_items(save_items, self.dataset_json_path)
+        save_vtuber_dataset_items(save_items, self.dataset_json_path, self.shape_output)
         self.logger.info(f"DONE!")
