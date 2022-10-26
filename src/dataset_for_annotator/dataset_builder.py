@@ -27,10 +27,10 @@ class DatasetBuilder:
     MERGED_JSON_NAME = "merged.json"
     DATASET_JSON_NAME = "dataset.json"
     UPLOADS_DIR = "uploads"
-    DATASET_MAX = 1000
 
     def __init__(self,
         save_dir: PathLike, youtube_api_key: str, twitter_api_key: str,
+        dataset_max: int,
         logger: logging.Logger = get_logger(__name__, logging.DEBUG)
     ) -> None:
         self.logger = logger
@@ -49,6 +49,7 @@ class DatasetBuilder:
 
         self.youtube_collector = YouTubeCollector(youtube_api_key, self.uploads_dir, self.logger)
         self.twitter_collector = TwitterCollector(twitter_api_key, self.logger)
+        self.DATASET_MAX = dataset_max
 
     def load_merged_datum(self) -> None:
         if not os.path.exists(self.merged_json_path):
@@ -63,9 +64,7 @@ class DatasetBuilder:
     def build(self) -> None:
         self.filtered_datum = self.vtuber_merged_datum
         self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
-        # self.__complement_youtube_basic_info()
-        # self.filtered_datum = filter_vtuber_dict(youtube_basic_filter_conds, self.filtered_datum)
-        # self.__get_upload_videos()
+        self.__get_upload_videos()
         self.__get_self_intro_videos()
         self.filtered_datum = filter_vtuber_dict(youtube_content_filter_conds, self.filtered_datum)
 
