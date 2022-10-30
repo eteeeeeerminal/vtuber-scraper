@@ -9,7 +9,7 @@ import os
 import time
 import glob
 import logging
-from yt_dlp import YoutubeDL
+from yt_dlp import YoutubeDL, DownloadError
 
 from dataset_for_annotator.data_types import dataset
 from dataset_for_annotator.data_types.dataset import VTuberDatasetItem, load_vtuber_dataset_items
@@ -60,5 +60,11 @@ class VideoDownloader:
             return None
         self.logger.info(f"downloading {video_id}")
         url = video_id_to_url(video_id)
-        self.ydl.download(url)
+
+        try:
+            self.ydl.download(url)
+        except DownloadError as e:
+            self.logger.warning(f"ERROR at {video_id}")
+            self.logger.warning(f"{e}")
+            return None
         self.logger.info(f"downloaded {video_id}")
