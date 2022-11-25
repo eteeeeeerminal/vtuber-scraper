@@ -32,11 +32,7 @@ def vtuber_merged_datum() -> list[VTuberMergedData]:
             datetime.datetime.fromisoformat("2022-01-01T12:00:05+09:00"),
             YouTubeData(
                 "TestCase2-Minimum", "Test Ch. 最小 限", "必要最小限のパターンの VTuber です。",
-                datetime.datetime.fromisoformat("2019-01-20T21:17:05+09:00"), None, 5000, 2,
-                [
-                    YouTubeVideoData("video1", "テスト投稿と野宿", "テストです。", datetime.datetime.fromisoformat("2019-01-30T00:00:00+09:00")),
-                    YouTubeVideoData("video2", "テストその2 逃亡", "チャンネル登録おねがいします", datetime.datetime.fromisoformat("2019-01-31T00:00:00+09:00"))
-                ]
+                datetime.datetime.fromisoformat("2019-01-20T21:17:05+09:00"), None, 5000, 2, 2
             ),
             MissingValue.NotExist,
             TwitterData("twitter-minimum")
@@ -46,34 +42,7 @@ def vtuber_merged_datum() -> list[VTuberMergedData]:
             datetime.datetime.fromisoformat("2022-10-01T15:12:01+09:00"),
             YouTubeData(
                 "TestCase3-Full", "Test Ch. 全要素 アリ", "全ての情報が取得できた VTuber です。",
-                datetime.datetime.fromisoformat("2019-04-01T09:05:10+09:00"), 1500, 125141, 5,
-                [
-                    YouTubeVideoData(
-                        "video1", "【VTuber自己紹介】はじめまして。全要素 アリです。",
-                        "ハロハロ！〇〇VTuberの全要素 アリです。これからよろしくおねがいします。",
-                        datetime.datetime.fromisoformat("2019-04-20T08:30:00+09:00")
-                    ),
-                    YouTubeVideoData(
-                        "video2", "【初配信】これからやりたいこと！",
-                        "ファンネーム決めたり、今後の活動予定話したりします！",
-                        datetime.datetime.fromisoformat("2019-04-28T21:00:30+09:00")
-                    ),
-                    YouTubeVideoData(
-                        "video3", "【ゲーム実況】我々はアマゾンの奥地へと向かった",
-                        "こちらのゲームを実況します → wwwhogehogecom",
-                        datetime.datetime.fromisoformat("2019-05-10T21:01:00+09:00")
-                    ),
-                    YouTubeVideoData(
-                        "video4", "hogefuga 歌ってみた。 / 全要素 アリ cover",
-                        "本家様 → aaaaa \n mix: xxxx",
-                        datetime.datetime.fromisoformat("2019-05-20T20:00:00+09:00")
-                    ),
-                    YouTubeVideoData(
-                        "video5", "【雑談配信】ぐでぇ～",
-                        "最近憂鬱",
-                        datetime.datetime.fromisoformat("2019-06-08T21:10:28+09:00")
-                    )
-                ]
+                datetime.datetime.fromisoformat("2019-04-01T09:05:10+09:00"), 1500, 125141, 5, 5
             ),
             YouTubeVideoData(
                 "video1", "【VTuber自己紹介】はじめまして。全要素 アリです。",
@@ -95,24 +64,24 @@ def vtuber_dataset_items() -> list[VTuberDatasetItem]:
     return [
         VTuberDatasetItem(
             "TestCase1-hoge", datetime.datetime.fromisoformat("2022-10-10T15:12:01+09:00"),
-            TwitterDatasetItem(
-                "testcasehoge", "ほげほげふが@新人VTuber", "フォローしてください",
-                "header-url-hoge", "icon-url-hoge", ["tweet-hoge", "tweet-fuga"], "tweet-pinned"
-            ),
             YouTubeDatasetItem(
-                "TestCase1-hoge", "self-intro-video"
+                "TestCase1-hoge", "テストくん",
+                YouTubeVideoData(
+                    "videohoge", "hogehogeohge",
+                    "ほげほげです",
+                    datetime.datetime.fromisoformat("2020-08-10T07:30:00+09:00")
+                )
             )
         ),
         VTuberDatasetItem(
             "TestCase3-Full", datetime.datetime.fromisoformat("2022-10-01T15:12:01+09:00"),
-            TwitterDatasetItem(
-                "testcasefull", "全要素アリ@VTuber", "VTuberやってます！",
-                "header-url", "icon-url", [
-                    "tweet1", "tweet2", "tweet3", "tweet4", "tweet5", "tweet6"
-                ], None
-            ),
             YouTubeDatasetItem(
-                "TestCase3-Full", "video1"
+                "TestCase3-Full", "Test Ch. 全要素 アリ",
+                YouTubeVideoData(
+                    "video1", "【VTuber自己紹介】はじめまして。全要素 アリです。",
+                    "ハロハロ！〇〇VTuberの全要素 アリです。これからよろしくおねがいします。",
+                    datetime.datetime.fromisoformat("2019-04-20T08:30:00+09:00")
+                ),
             )
         )
     ]
