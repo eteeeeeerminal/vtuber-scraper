@@ -1,3 +1,7 @@
+"""
+REFACTOR: 読み込み関数まわりを切り出ししたいが、logger まわりがひっついてきて難しい
+"""
+
 import logging
 import pathlib
 import os
@@ -217,7 +221,7 @@ class DatasetBuilder:
         list(map(
             self.youtube_collector.set_self_intro_video,
             filter(
-                lambda x: not found_self_intro_video(x),
+                lambda x: True,
                 self.filtered_datum.values()
             )
         ))
