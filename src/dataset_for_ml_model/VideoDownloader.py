@@ -3,6 +3,7 @@ youtube-dlp だかなんだかで学習に使う用のデータを落として�
 前処理はしない
 
 自然言語処理的なものは後回しでいいかな
+file name スネークケースにリネームする
 """
 
 import os
@@ -46,7 +47,6 @@ class VideoDownloader:
 
         for item in self.dataset_items:
             self.download_yt_video(item.youtube.target_video.video_id)
-            time.sleep(3)
 
         self.logger.info("DONE!")
 
@@ -68,3 +68,5 @@ class VideoDownloader:
             self.logger.warning(f"{e}")
             return None
         self.logger.info(f"downloaded {video_id}")
+
+        time.sleep(3)
