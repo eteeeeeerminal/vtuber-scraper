@@ -1,4 +1,6 @@
-"""vpost と YouTube から取得したデータをまとめて, さらに足りないデータも集めて, データセットを作る.
+"""`vpost_data` と `yt_data` を統合して
+`dataset/uploads` と `dataset/merged.json` を吐き出す。
+その後、適当なフィルタリングをして、`dataset/dataset.json` を吐き出す。
 """
 import os
 
