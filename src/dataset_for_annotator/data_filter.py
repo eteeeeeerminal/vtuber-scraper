@@ -56,12 +56,12 @@ def got_upload_lists(target: VTuberMergedData) -> bool:
 
 def ng_words_filter(target: VTuberMergedData) -> bool:
     description_ng_words = (
-        "コンドーム",  # 公式アンバサダーがいたので
+        "コンドーム",  # 公式アンバサダー VTuber がいたがアダルトに関連するので除外
     )
     description_ng_words = list(map(re.compile, description_ng_words))
 
     title_ng_words = (
-        "切り抜き",
+        "切り抜き", # 切り抜き動画がメインのチャンネルは除外
     )
     title_ng_patterns = list(map(re.compile, title_ng_words)) + description_ng_words
 
@@ -124,16 +124,17 @@ def is_self_intro_video(video: YouTubeVideoData) -> bool:
     live = re.compile("配信")
     colab = re.compile("コラボ")
     ng_patterns = (
-        "生放送アーカイブ",
-        "エイプリルフール", "2人組", "ふたりで",
-        "#shorts", "Shorts", # shorts 動画は縦長でアス比が合わせにくいので除外
+        "生放送アーカイブ", # 長いので除外
+        "エイプリルフール", # 嘘の自己紹介なので除外
+        "2人組", "ふたりで", # 複数人による自己紹介動画は除外
+        "#shorts", "Shorts", # shorts 動画は縦長でアスペクト比が違うので除外
         "記念枠", "雑談", "Apex 練習", # 配信は長いので除外
-        "100の質問", "1キル1答", "100個の質問", "【龍玉寺或斗】", "【 Dead by Daylight 】", # 長い
+        "100の質問", "1キル1答", "100個の質問", "【龍玉寺或斗】", "【 Dead by Daylight 】", # 長いので除外
+        "赤城まやの自己紹介と質問箱返信！", "【動画撮影】", "【スタマス】", "りりてれ", "リトルナイトメアやってみた", # 長いので除外
         "英語で", "歌曲", "自我介绍", "Español", "韓国語で", "【Дебют】", # 日本語じゃなかったりするので除外
-        "自己紹介メイキング", "今日のおすすめキャスト", "#コミケ", "自己紹介動画を見る", "ツイステ",
+        "自己紹介メイキング", "今日のおすすめキャスト", "#コミケ", "自己紹介動画を見る", "ツイステ", # 本人の自己紹介動画ではないので除外
         "一問一答", # 企画の影響が強すぎて個性が出ないので除外
-        "赤城まやの自己紹介と質問箱返信！", "【動画撮影】", "【スタマス】", "りりてれ", "リトルナイトメアやってみた", # 長い
-        "シルエット自己紹介動画", "『自己紹介動画』あるある", "アイドル風自己紹介動画選手権"
+        "シルエット自己紹介動画", "『自己紹介動画』あるある", "アイドル風自己紹介動画選手権" # 特殊な自己紹介動画なので除外
     )
     ng_patterns = list(map(re.compile, ng_patterns))
 
